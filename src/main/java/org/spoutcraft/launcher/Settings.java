@@ -98,6 +98,14 @@ public class Settings {
 		yaml.setProperty("launcher.memory", memory);
 	}
 
+	public static synchronized String getAuthServer() {
+		return yaml.getString("launcher.auth", "");
+	}
+
+	public static synchronized void setAuthServer(String server) {
+		yaml.setProperty("launcher.auth", server);
+	}
+
 	public static synchronized void setPermGen(boolean permgen) {
 		yaml.setProperty("launcher.permgen", permgen);
 	}

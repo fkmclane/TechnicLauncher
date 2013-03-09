@@ -49,6 +49,7 @@ public class LoginWorker extends SwingWorker<Object, Object> {
 	private final LoginFrame loginFrame;
 	private String user;
 	private String pass;
+	private String authServer;
 	private String[] values = null;
 
 	public LoginWorker(LoginFrame loginFrame) {
@@ -71,12 +72,20 @@ public class LoginWorker extends SwingWorker<Object, Object> {
 		this.pass = pass;
 	}
 
+	public String getAuthServer() {
+		return authServer;
+	}
+
+	public void setAuthServer(String authServer) {
+		this.authServer = authServer;
+	}
+
 	@Override
 	protected Object doInBackground() throws Exception {
 		loginFrame.getProgressBar().setVisible(true);
-		loginFrame.getProgressBar().setString("Connecting to minecraft.net...");
+		loginFrame.getProgressBar().setString("Connecting to " + authServer + "...");
 		try {
-			values = Utils.doLogin(user, pass, loginFrame.getProgressBar());
+			values = Utils.doLogin(user, pass, authServer, loginFrame.getProgressBar());
 			Launcher.getGameUpdater().setMinecraftUser(values[2].trim());
 			Launcher.getGameUpdater().setMinecraftSession(values[3].trim());
 			Launcher.getGameUpdater().setDownloadTicket(values[1].trim());

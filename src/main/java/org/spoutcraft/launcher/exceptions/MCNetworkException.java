@@ -42,7 +42,7 @@ public class MCNetworkException extends Exception {
 	}
 
 	public MCNetworkException() {
-		this(null, "Could not connect to minecraft.net");
+		this(null, "Could not connect to authentication server.");
 	}
 
 	@Override

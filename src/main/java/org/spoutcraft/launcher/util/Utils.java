@@ -69,6 +69,8 @@ import org.spoutcraft.launcher.exceptions.MinecraftUserNotPremiumException;
 import org.spoutcraft.launcher.exceptions.OutdatedMCLauncherException;
 import org.spoutcraft.launcher.exceptions.PermissionDeniedException;
 
+import mineshafter.proxy.MineProxy;
+
 public class Utils {
 	private static File workDir = null;
 	private static StartupParameters params = null;
@@ -177,11 +179,10 @@ public class Utils {
 	}
 
 	public static String executePost(String targetURL, String urlParameters, JProgressBar progress) throws PermissionDeniedException {
-		HttpsURLConnection connection = null;
+		URLConnection connection = null;
 		try {
 			URL url = new URL(targetURL);
-			connection = (HttpsURLConnection) url.openConnection();
-			connection.setRequestMethod("POST");
+			connection = url.openConnection();
 			connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
 			connection.setRequestProperty("Content-Length", Integer.toString(urlParameters.getBytes().length));
@@ -194,23 +195,6 @@ public class Utils {
 			connection.setConnectTimeout(10000);
 
 			connection.connect();
-			Certificate[] certs = connection.getServerCertificates();
-
-			byte[] bytes = new byte[294];
-			DataInputStream dis = new DataInputStream(StartupParameters.class.getResourceAsStream("resources/minecraft.key"));
-			dis.readFully(bytes);
-			dis.close();
-
-			Certificate c = certs[0];
-			PublicKey pk = c.getPublicKey();
-			byte[] data = pk.getEncoded();
-
-			for (int j = 0; j < data.length; j++) {
-				if (data[j] == bytes[j]) {
-					continue;
-				}
-				throw new RuntimeException("Public key mismatch");
-			}
 
 			DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
 			wr.writeBytes(urlParameters);
@@ -236,10 +220,6 @@ public class Utils {
 		} catch (Exception e) {
 			String message = "Login failed...";
 			progress.setString(message);
-		} finally {
-			if (connection != null) {
-				connection.disconnect();
-			}
 		}
 		return null;
 	}
@@ -285,9 +265,11 @@ public class Utils {
 		return count;
 	}
 
-	public static String[] doLogin(String user, String pass, JProgressBar progress) throws BadLoginException, MCNetworkException, OutdatedMCLauncherException, UnsupportedEncodingException, MinecraftUserNotPremiumException, PermissionDeniedException {
+	public static String[] doLogin(String user, String pass, String authServer, JProgressBar progress) throws BadLoginException, MCNetworkException, OutdatedMCLauncherException, UnsupportedEncodingException, MinecraftUserNotPremiumException, PermissionDeniedException {
 		String parameters = "user=" + URLEncoder.encode(user, "UTF-8") + "&password=" + URLEncoder.encode(pass, "UTF-8") + "&version=" + 13;
-		String result = executePost("https://login.minecraft.net/", parameters, progress);
+		if(isEmpty(authServer))
+			authServer = "login.minecraft.net";
+		String result = executePost("http://" + authServer + "/", parameters, progress);
 		if (result == null) {
 			throw new MCNetworkException();
 		}
@@ -386,5 +368,20 @@ public class Utils {
 		} finally {
 			IOUtils.closeQuietly(stream);
 		}
+	}
+
+	public static boolean startProxy() throws Exception {
+		String authServer = Settings.getAuthServer();
+		if(isEmpty(authServer))
+			return true;
+
+		MineProxy proxy = new MineProxy(authServer);
+		proxy.start();
+
+		System.setProperty("http.proxyHost", "127.0.0.1");
+		System.setProperty("http.proxyPort", Integer.toString(proxy.getPort()));
+		System.setProperty("java.net.preferIPv4Stack", "true");
+
+		return true;
 	}
 }

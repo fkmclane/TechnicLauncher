@@ -64,6 +64,7 @@ import javax.swing.JProgressBar;
 
 import org.spoutcraft.launcher.api.Event;
 import org.spoutcraft.launcher.api.Launcher;
+import org.spoutcraft.launcher.Settings;
 import org.spoutcraft.launcher.skin.ErrorDialog;
 import org.spoutcraft.launcher.util.DownloadListener;
 import org.spoutcraft.launcher.util.Utils;
@@ -165,6 +166,7 @@ public abstract class LoginFrame extends JFrame implements DownloadListener {
 		LoginWorker loginThread = new LoginWorker(this);
 		loginThread.setUser(user);
 		loginThread.setPass(pass);
+		loginThread.setAuthServer(Settings.getAuthServer());
 		loginThread.execute();
 	}
 
@@ -325,9 +327,9 @@ public abstract class LoginFrame extends JFrame implements DownloadListener {
 				break;
 			case MINECRAFT_NETWORK_DOWN:
 				if (!canPlayOffline()) {
-					JOptionPane.showMessageDialog(getParent(), "Unable to authenticate account with minecraft.net");
+					JOptionPane.showMessageDialog(getParent(), "Unable to authenticate account with authentication server");
 				} else {
-					int result = JOptionPane.showConfirmDialog(getParent(), "Would you like to run in offline mode?", "Unable to connect to minecraft.net", JOptionPane.YES_NO_OPTION);
+					int result = JOptionPane.showConfirmDialog(getParent(), "Would you like to run in offline mode?", "Unable to connect to authentication server", JOptionPane.YES_NO_OPTION);
 					if (result == JOptionPane.YES_OPTION) {
 						Launcher.getGameUpdater().runGame();
 					} else {

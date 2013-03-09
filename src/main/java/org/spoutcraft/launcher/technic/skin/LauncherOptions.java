@@ -80,9 +80,9 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 	private static final String ESCAPE_ACTION = "escape";
 
 	private JLabel background;
-	private JLabel build;
 	private LiteButton logs;
 	private JComboBox memory;
+	private LiteTextBox auth;
 	private JCheckBox permgen;
 	private JRadioButton beta;
 	private JRadioButton stable;
@@ -135,15 +135,10 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 		title.setForeground(Color.WHITE);
 		title.setHorizontalAlignment(SwingConstants.CENTER);
 
-		build = new JLabel(LAUNCHER_PREPEND + Settings.getLauncherBuild());
-		build.setBounds(15, title.getY() + title.getHeight() + 10, FRAME_WIDTH - 20, 20);
-		build.setFont(minecraft);
-		build.setForeground(Color.WHITE);
-		
 		ButtonGroup group = new ButtonGroup();
-		
+
 		stable = new JRadioButton("Always use Stable Launcher Builds");
-		stable.setBounds(10, build.getY() + build.getHeight() + 10, FRAME_WIDTH - 20, 20);
+		stable.setBounds(10, title.getY() + title.getHeight() + 10, FRAME_WIDTH - 20, 20);
 		stable.setFont(minecraft);
 		stable.setForeground(Color.WHITE);
 		stable.setContentAreaFilled(false);
@@ -174,7 +169,7 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 
 		JLabel memoryLabel = new JLabel("Memory: ");
 		memoryLabel.setFont(minecraft);
-		memoryLabel.setBounds(10, beta.getY() + beta.getHeight() + 10, 65, 20);
+		memoryLabel.setBounds(10, beta.getY() + beta.getHeight() + 10, 130, 20);
 		memoryLabel.setForeground(Color.WHITE);
 		memoryLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -182,9 +177,18 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 		memory.setBounds(memoryLabel.getX() + memoryLabel.getWidth() + 10, memoryLabel.getY(), 100, 20);
 		populateMemory(memory);
 
+		JLabel authLabel = new JLabel("Auth Server: ");
+		authLabel.setFont(minecraft);
+		authLabel.setBounds(10, memoryLabel.getY() + memoryLabel.getHeight() + 10, 130, 20);
+		authLabel.setForeground(Color.WHITE);
+		authLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+		auth = new LiteTextBox(this, Settings.getAuthServer());
+		auth.setBounds(authLabel.getX() + authLabel.getWidth() + 10, authLabel.getY(), 100, 20);
+
 		permgen = new JCheckBox("Increase PermGen Size");
 		permgen.setFont(minecraft);
-		permgen.setBounds(10, memoryLabel.getY() + memoryLabel.getHeight() + 10, FRAME_WIDTH - 20, 25);
+		permgen.setBounds(10, authLabel.getY() + authLabel.getHeight() + 10, FRAME_WIDTH - 20, 25);
 		permgen.setSelected(Settings.getPermGen());
 		permgen.setBorderPainted(false);
 		permgen.setFocusPainted(false);
@@ -232,7 +236,6 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 
 		Container contentPane = getContentPane();
 		contentPane.add(permgen);
-		contentPane.add(build);
 		contentPane.add(beta);
 		contentPane.add(stable);
 		contentPane.add(changeFolder);
@@ -243,6 +246,8 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 		contentPane.add(title);
 		contentPane.add(memory);
 		contentPane.add(memoryLabel);
+		contentPane.add(auth);
+		contentPane.add(authLabel);
 		contentPane.add(save);
 		contentPane.add(background);
 
@@ -263,6 +268,7 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 			int oldMem = Settings.getMemory();
 			int mem = Memory.memoryOptions[memory.getSelectedIndex()].getSettingsId();
 			Settings.setMemory(mem);
+			Settings.setAuthServer(auth.getText());
 			boolean oldperm = Settings.getPermGen();
 			boolean perm = permgen.isSelected();
 			Settings.setPermGen(perm);
@@ -297,10 +303,8 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 			}
 		} else if (action.equals(BETA_ACTION)) {
 			buildStream = "beta";
-			build.setText(LAUNCHER_PREPEND + getLatestLauncherBuild(buildStream));
 		} else if (action.equals(STABLE_ACTION)) {
 			buildStream = "stable";
-			build.setText(LAUNCHER_PREPEND + getLatestLauncherBuild(buildStream));
 		}
 		
 	}

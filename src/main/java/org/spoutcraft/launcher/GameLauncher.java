@@ -126,6 +126,13 @@ public class GameLauncher extends JFrame implements WindowListener {
 			catch (InterruptedException ignore) { }
 		}
 
+		try {
+			Utils.startProxy();
+		}
+		catch (Exception e) {
+			JOptionPane.showMessageDialog(getParent(), "Error while trying to start the proxy server.");
+		}
+
 		Applet applet = null;
 		try {
 			applet = MinecraftLauncher.getMinecraftApplet(pack);
