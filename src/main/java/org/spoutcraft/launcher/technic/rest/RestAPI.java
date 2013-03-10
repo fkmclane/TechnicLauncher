@@ -187,7 +187,10 @@ public class RestAPI {
 		RestInfo result = getRestObject(RestInfo.class, getModpackInfoURL(modpack));
 		result.setRest(this);
 		result.init();
-		String display = modpacks.getDisplayName(modpack);
+		String display = null;
+		if (modpacks != null) {
+			display = modpacks.getDisplayName(modpack);
+		}
 		if (display != null) {
 			result.setDisplayName(display);
 		}
@@ -229,6 +232,7 @@ public class RestAPI {
 		InputStream stream = null;
 		try {
 			URLConnection conn = new URL(url).openConnection();
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 			conn.setConnectTimeout(5000);
 			conn.setReadTimeout(5000);
 
