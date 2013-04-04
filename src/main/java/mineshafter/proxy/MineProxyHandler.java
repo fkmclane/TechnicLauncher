@@ -91,7 +91,6 @@ public class MineProxyHandler extends Thread {
 		// run matchers
 		Matcher skinMatcher = MineProxy.SKIN_URL.matcher(url);
 		Matcher capeMatcher = MineProxy.CAPE_URL.matcher(url);
-		Matcher getversionMatcher = MineProxy.GETVERSION_URL.matcher(url);
 		Matcher joinserverMatcher = MineProxy.JOINSERVER_URL.matcher(url);
 		Matcher checkserverMatcher = MineProxy.CHECKSERVER_URL.matcher(url);
 		Matcher audiofix_url = MineProxy.AUDIOFIX_URL.matcher(url);
@@ -141,25 +140,6 @@ public class MineProxyHandler extends Thread {
 				proxy.capeCache.put(username, data);
 			}
 
-		} 
-		// If Version Request
-		else if(getversionMatcher.matches()) {
-			System.out.println("GetVersion");
-
-			url = "http://" + MineProxy.authServer + "/getversion.php";
-			System.out.println("To: " + url);
-
-			try {
-				int postlen = Integer.parseInt(headers.get("content-length"));
-				char[] postdata = new char[postlen];
-				InputStreamReader reader = new InputStreamReader(fromClient);
-				reader.read(postdata);
-
-				data = postRequest(url, new String(postdata), "application/x-www-form-urlencoded");
-
-			} catch(IOException ex) {
-				System.err.println("Unable to read POST data from getversion request: " + ex.getLocalizedMessage());
-			}
 		} 
 		// If JoinServer Request
 		else if(joinserverMatcher.matches()) {
