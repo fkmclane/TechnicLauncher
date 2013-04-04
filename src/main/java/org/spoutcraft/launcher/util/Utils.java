@@ -390,10 +390,10 @@ public class Utils {
 		}
 	}
 
-	public static boolean startProxy() throws Exception {
+	public static void startProxy() throws Exception {
 		String authServer = Settings.getAuthServer();
 		if(isEmpty(authServer))
-			return true;
+			return;
 
 		MineProxy proxy = new MineProxy(authServer);
 		proxy.start();
@@ -401,7 +401,5 @@ public class Utils {
 		System.setProperty("http.proxyHost", "127.0.0.1");
 		System.setProperty("http.proxyPort", Integer.toString(proxy.getPort()));
 		System.setProperty("java.net.preferIPv4Stack", "true");
-
-		return true;
 	}
 }

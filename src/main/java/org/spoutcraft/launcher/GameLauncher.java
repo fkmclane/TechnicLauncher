@@ -142,7 +142,7 @@ public class GameLauncher extends JFrame implements WindowListener {
 			Utils.startProxy();
 		}
 		catch (Exception e) {
-			JOptionPane.showMessageDialog(getParent(), "Error while trying to start the proxy server.");
+			JOptionPane.showMessageDialog(getParent(), "Error starting the proxy server: " + e);
 		}
 
 		Applet applet = null;
