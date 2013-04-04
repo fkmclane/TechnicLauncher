@@ -24,6 +24,7 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
+
 package mineshafter.util;
 
 import java.io.IOException;
@@ -42,7 +43,8 @@ public class Streams {
 				if(read == -1) {
 					break;
 				}
-			} catch(IOException e) {
+			}
+			catch(IOException e) {
 				break;
 			}
 			out.write(b, 0, read);
@@ -62,12 +64,13 @@ public class Streams {
 				while(true) {
 					try {
 						count = in.read(b);
-						if(count == -1) {
+						if(count == -1)
 							return;
-						}
+
 						out.write(b, 0, count);
 						out.flush();
-					} catch(IOException e) {
+					}
+					catch(IOException e) {
 						return;
 					}
 				}

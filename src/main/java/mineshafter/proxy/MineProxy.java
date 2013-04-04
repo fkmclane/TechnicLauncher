@@ -24,6 +24,7 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
+
 package mineshafter.proxy;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class MineProxy extends Thread {
 	// Patterns
 	public static Pattern SKIN_URL = Pattern.compile("http://skins\\.minecraft\\.net/MinecraftSkins/(.+?)\\.png");
 	public static Pattern CAPE_URL = Pattern.compile("http://skins\\.minecraft\\.net/MinecraftCloaks/(.+?)\\.png");
+	public static Pattern LOGIN_URL = Pattern.compile("http://login\\.minecraft\\.net/");
 	public static Pattern JOINSERVER_URL = Pattern.compile("http://session\\.minecraft\\.net/game/joinserver\\.jsp(.*)");
 	public static Pattern CHECKSERVER_URL = Pattern.compile("http://session\\.minecraft\\.net/game/checkserver\\.jsp(.*)");
 	public static Pattern AUDIOFIX_URL = Pattern.compile("http://s3\\.amazonaws\\.com/MinecraftResources/");
@@ -74,7 +76,8 @@ public class MineProxy extends Thread {
 					this.port = port;
 					System.out.println("Proxying successful");
 					break;
-				} catch (BindException ex) {
+				}
+				catch (BindException ex) {
 					port++;
 				}
 			}
@@ -85,7 +88,8 @@ public class MineProxy extends Thread {
 				MineProxyHandler handler = new MineProxyHandler(this, connection);
 				handler.start();
 			}
-		} catch(IOException ex) {
+		}
+		catch(IOException ex) {
 			System.err.println("Error in server accept loop: " + ex.getLocalizedMessage());
 		}
 	}
@@ -95,7 +99,8 @@ public class MineProxy extends Thread {
 		while (port < 0) {
 			try {
 				sleep(50);
-			} catch (InterruptedException ex) {
+			}
+			catch (InterruptedException ex) {
 				System.err.println("Interrupted while waiting for port: " + ex.getLocalizedMessage());
 			}
 		}

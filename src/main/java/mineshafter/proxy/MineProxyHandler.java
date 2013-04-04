@@ -24,6 +24,7 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
+
 package mineshafter.proxy;
 
 import java.io.BufferedInputStream;
@@ -91,6 +92,7 @@ public class MineProxyHandler extends Thread {
 		// run matchers
 		Matcher skinMatcher = MineProxy.SKIN_URL.matcher(url);
 		Matcher capeMatcher = MineProxy.CAPE_URL.matcher(url);
+		Matcher loginMatcher = MineProxy.LOGIN_URL.matcher(url);
 		Matcher joinserverMatcher = MineProxy.JOINSERVER_URL.matcher(url);
 		Matcher checkserverMatcher = MineProxy.CHECKSERVER_URL.matcher(url);
 		Matcher audiofix_url = MineProxy.AUDIOFIX_URL.matcher(url);
@@ -109,7 +111,8 @@ public class MineProxyHandler extends Thread {
 				System.out.println("Skin from cache");
 
 				data = proxy.skinCache.get(username);  // Then get it from there
-			} else {
+			}
+			else {
 				url = "http://" + MineProxy.authServer + "/getskin.php?user=" + username;
 
 				System.out.println("To: " + url);
@@ -120,7 +123,7 @@ public class MineProxyHandler extends Thread {
 				proxy.skinCache.put(username, data); // And put it in there
 			}
 
-		} 
+		}
 		// If Cape Request
 		else if(capeMatcher.matches()) {
 			System.out.println("Cape");
@@ -129,7 +132,8 @@ public class MineProxyHandler extends Thread {
 			if(proxy.capeCache.containsKey(username)) {
 				System.out.println("Cape from cache");
 				data = proxy.capeCache.get(username);
-			} else {
+			}
+			else {
 				url = "http://" + MineProxy.authServer + "/getcape.php?user=" + username;
 
 				System.out.println("To: " + url);
@@ -140,8 +144,28 @@ public class MineProxyHandler extends Thread {
 				proxy.capeCache.put(username, data);
 			}
 
-		} 
-		// If JoinServer Request
+		}
+		// If Login Request
+		else if(loginMatcher.matches()) {
+			System.out.println("Login");
+
+			url = "http://" + MineProxy.authServer + "/";
+			System.out.println("To: " + url);
+
+			try {
+				int postlen = Integer.parseInt(headers.get("content-length"));
+				char[] postdata = new char[postlen];
+				InputStreamReader reader = new InputStreamReader(fromClient);
+				reader.read(postdata);
+
+				data = postRequest(url, new String(postdata), "application/x-www-form-urlencoded");
+
+			}
+			catch(IOException ex) {
+				System.err.println("Unable to read POST data from login request: " + ex.getLocalizedMessage());
+			}
+		}
+		// If Join Server Request
 		else if(joinserverMatcher.matches()) {
 			System.out.println("JoinServer");
 
@@ -193,7 +217,8 @@ public class MineProxyHandler extends Thread {
 					// to avoid a resource leak
 					sock.close();
 
-				} else if(method.equals("GET")  || method.equals("POST")) {
+				}
+				else if(method.equals("GET")  || method.equals("POST")) {
 					HttpURLConnection c = (HttpURLConnection) u.openConnection(Proxy.NO_PROXY);
 					c.setRequestMethod(method);
 					boolean post = method.equals("POST");
@@ -221,19 +246,18 @@ public class MineProxyHandler extends Thread {
 					java.util.Map<String, java.util.List<String>> h = c.getHeaderFields();
 headerloop:
 					for(String k : h.keySet()) {
-						if(k == null) continue;
+						if(k == null)
+							continue;
 
 						k = k.trim();
 
-						for(String forbiddenHeader : BLACKLISTED_HEADERS)
-						{
-							if(k.equalsIgnoreCase(forbiddenHeader)) 
+						for(String forbiddenHeader : BLACKLISTED_HEADERS) {
+							if(k.equalsIgnoreCase(forbiddenHeader))
 								continue headerloop;
 						}
 
 						java.util.List<String> vals = h.get(k);
-						for(String v : vals) 
-						{
+						for(String v : vals) {
 							res += k + ": " + v + "\r\n";
 						}
 					}
@@ -250,7 +274,8 @@ headerloop:
 
 					System.out.println("Piping finished, data size: " + size);
 
-				} else if (method.equals("HEAD")) {
+				}
+				else if (method.equals("HEAD")) {
 					HttpURLConnection c = (HttpURLConnection) u.openConnection(Proxy.NO_PROXY);
 					c.setRequestMethod("HEAD");
 
@@ -263,7 +288,8 @@ headerloop:
 
 					java.util.Map<String, java.util.List<String>> h = c.getHeaderFields();
 					for (String k : h.keySet()) {
-						if(k == null) continue;
+						if(k == null)
+							continue;
 						java.util.List<String> vals = h.get(k);
 						for(String v : vals) {
 							res += k + ": " + v + "\r\n";
@@ -274,11 +300,13 @@ headerloop:
 					toClient.writeBytes(res); // TODO Occasional exception socket write error
 					toClient.close();
 					connection.close();
-				} else {
+				}
+				else {
 					System.err.println("UNEXPECTED REQUEST TYPE: " + method);
 				}
 
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				e.printStackTrace();
 			}
 
@@ -303,9 +331,8 @@ headerloop:
 			fromClient.close();
 			toClient.close();
 			connection.close();
-		} 
-		catch (IOException ex) 
-		{
+		}
+		catch (IOException ex) {
 			System.err.println("Error: " + ex.getLocalizedMessage());
 		}
 	}
@@ -360,9 +387,11 @@ headerloop:
 
 			return grabData(in);
 
-		} catch (MalformedURLException ex) {
+		}
+		catch (MalformedURLException ex) {
 			System.err.println("Bad URL in getRequest: " + ex.getLocalizedMessage());
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			System.err.println("IO error during a getRequest: " + ex.getLocalizedMessage());
 		}
 
@@ -376,7 +405,8 @@ headerloop:
 		try {
 			writer.write(postdata);
 			writer.flush();
-		} catch(IOException e) {
+		}
+		catch(IOException e) {
 			e.printStackTrace();
 		}
 
@@ -405,11 +435,14 @@ headerloop:
 			byte[] data = grabData(new BufferedInputStream(c.getInputStream()));
 			return data;
 
-		} catch(java.net.UnknownHostException ex) {
+		}
+		catch(java.net.UnknownHostException ex) {
 			System.err.println("Unable to resolve remote host, returning null: " + ex.getLocalizedMessage());
-		} catch (MalformedURLException ex) {
+		}
+		catch (MalformedURLException ex) {
 			System.err.println("Bad URL when doing postRequest: " + ex.getLocalizedMessage());
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			System.err.println("Error: " + ex.getLocalizedMessage());
 		}
 
@@ -425,7 +458,8 @@ headerloop:
 			try {
 				len = in.read(buffer);
 				if(len == -1) break;
-			} catch(IOException e) {
+			}
+			catch(IOException e) {
 				break;
 			}
 			out.write(buffer, 0, len);
@@ -463,7 +497,8 @@ headerloop:
 					}
 
 					i++; // Increment for next round
-				} else {
+				}
+				else {
 					i = 0; // Reset
 				}
 
@@ -471,14 +506,16 @@ headerloop:
 				if (end)
 					break;
 			}
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			System.err.println("readUntil unable to read from InputStream, endSeq: " + new String(endSequence));
 			System.err.println("Error: " + ex.getLocalizedMessage());
 		}
 
 		try {
 			r = out.toString("UTF-8");
-		} catch (java.io.UnsupportedEncodingException ex) {
+		}
+		catch (java.io.UnsupportedEncodingException ex) {
 			System.err.println("readUntil unable to encode data: " + out.toString());
 			System.err.println("Error: " + ex.getLocalizedMessage());
 		}
