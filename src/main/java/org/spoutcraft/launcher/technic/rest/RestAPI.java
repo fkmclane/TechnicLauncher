@@ -32,11 +32,10 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 
 import org.apache.commons.io.IOUtils;
@@ -55,6 +54,7 @@ import org.spoutcraft.launcher.util.MirrorUtils;
 public class RestAPI {
 	private static RestAPI TECHNIC;
 	private static Map<String, Minecraft> mcVersions;
+	private static FullModpacks DEFAULT;
 
 	private final static String PATCH_VERSION = "1.4.7";
 	private final static ObjectMapper mapper = new ObjectMapper();
@@ -64,7 +64,7 @@ public class RestAPI {
 	private final String modURL;
 
 	private String mirrorURL;
-	private Modpacks modpacks;
+	private static Modpacks modpacks;
 
 	public RestAPI(String url) {
 		restURL = url;
@@ -90,18 +90,30 @@ public class RestAPI {
 		}
 	}
 
-	public static Set<String> getDefaults() {
-		Modpacks packs = getDefault().getModpacks();
-		if (packs != null) {
-			return packs.getMap().keySet();
+	public static void setupDefault() {
+		if (DEFAULT != null) {
+			return;
+		}
+		try {
+			DEFAULT = getRestObject(FullModpacks.class, getDefault().getRestInfoURL() + "?include=full");
+		} catch (RestfulAPIException e) {
+			Launcher.getLogger().log(Level.SEVERE, "Unable to connect to the Rest API at " + TECHNIC.getRestInfoURL() + "?include=full" + " Running Offline instead.", e);
+		}
+	}
+
+	public static Collection<RestInfo> getDefaults() {
+		getDefault();
+		if (DEFAULT != null) {
+			return DEFAULT.getModpacks();
 		} else {
-			return Collections.emptySet();
+			return Collections.emptyList();
 		}
 	}
 
 	public static RestAPI getDefault() {
 		if (TECHNIC == null) {
 			TECHNIC = new RestAPI("http://solder.technicpack.net/api/");
+			setupDefault();
 		}
 
 		return TECHNIC;
@@ -187,7 +199,7 @@ public class RestAPI {
 		return mirrorURL;
 	}
 
-	public List<RestInfo> getRestInfos() throws RestfulAPIException {
+	public Collection<RestInfo> getRestInfos() throws RestfulAPIException {
 		return modpacks.getModpacks();
 	}
 
@@ -203,16 +215,16 @@ public class RestAPI {
 	}
 
 	public RestInfo getModpackInfo(String modpack) throws RestfulAPIException {
-		RestInfo result = getRestObject(RestInfo.class, getModpackInfoURL(modpack));
+		RestInfo result;
+		if (this.equals(getDefault())) {
+			result = DEFAULT.getMap().get(modpack);
+		} else {
+			result = getRestObject(RestInfo.class, getModpackInfoURL(modpack));
+		}
+		
 		result.setRest(this);
 		result.init();
-		String display = null;
-		if (modpacks != null) {
-			display = modpacks.getDisplayName(modpack);
-		}
-		if (display != null) {
-			result.setDisplayName(display);
-		}
+
 		return result;
 	}
 
@@ -252,8 +264,8 @@ public class RestAPI {
 		try {
 			URLConnection conn = new URL(url).openConnection();
 			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
-			conn.setConnectTimeout(5000);
-			conn.setReadTimeout(5000);
+			conn.setConnectTimeout(15000);
+			conn.setReadTimeout(15000);
 
 			stream = conn.getInputStream();
 			T result = mapper.readValue(stream, restObject);
@@ -277,8 +289,8 @@ public class RestAPI {
 		try {
 			URLConnection conn = new URL(getMinecraftVersionURL()).openConnection();
 			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
-			conn.setConnectTimeout(5000);
-			conn.setReadTimeout(5000);
+			conn.setConnectTimeout(15000);
+			conn.setReadTimeout(15000);
 
 			stream = conn.getInputStream();
 			HashMap<String, Minecraft> versions = mapper.readValue(stream, new TypeReference<Map<String, Minecraft>>() {});
@@ -311,7 +323,7 @@ public class RestAPI {
 
 	public static String getMinecraftMD5(String version) {
 		Minecraft minecraft = mcVersions.get(version);
-		if (minecraft == null || minecraft.shouldUsePatch()) {
+		if (shouldUsePatch(version)) {
 			version = PATCH_VERSION;
 		}
 		minecraft = mcVersions.get(version);
@@ -324,7 +336,13 @@ public class RestAPI {
 
 	public static boolean shouldUsePatch(String version) {
 		Minecraft minecraft = mcVersions.get(version);
-		return minecraft == null || minecraft.shouldUsePatch();
+		boolean shouldPatch = false;
+		if (minecraft == null && (version.equals("1.2.3") || version.equals("1.2.5"))) {
+			shouldPatch = true;
+		} else if (minecraft != null) {
+			shouldPatch = minecraft.shouldUsePatch();
+		}
+		return shouldPatch;
 	}
 
 	public static String getPatchURL(String version) {
