@@ -27,13 +27,15 @@
 
 package org.spoutcraft.launcher.technic;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 
 import org.spoutcraft.launcher.Settings;
@@ -43,14 +45,19 @@ import org.spoutcraft.launcher.technic.rest.RestObject;
 import org.spoutcraft.launcher.technic.skin.ModpackOptions;
 import org.spoutcraft.launcher.util.Download;
 import org.spoutcraft.launcher.util.DownloadUtils;
+import org.spoutcraft.launcher.util.ImageUtils;
 import org.spoutcraft.launcher.util.MD5Utils;
 import org.spoutcraft.launcher.util.ResourceUtils;
 import org.spoutcraft.launcher.util.Utils;
 
 public abstract class PackInfo extends RestObject {
-	private Image logo;
-	private Image background;
-	private Image icon;
+	private static BufferedImage BACKUP_LOGO;
+	private static BufferedImage BACKUP_BACKGROUND;
+	private static BufferedImage BACKUP_ICON;
+	private AtomicReference<BufferedImage> logo = new AtomicReference<BufferedImage>();
+	private AtomicReference<BufferedImage> background = new AtomicReference<BufferedImage>();
+	private AtomicReference<BufferedImage> icon = new AtomicReference<BufferedImage>();
+	private HashMap<AtomicReference<BufferedImage>, AtomicReference<Boolean>> downloading = new HashMap<AtomicReference<BufferedImage>, AtomicReference<Boolean>>(3);
 
 	// Directories
 	private File installedDirectory;
@@ -61,6 +68,12 @@ public abstract class PackInfo extends RestObject {
 	private File tempDir;
 	private File resourceDir;
 	private File coremodsDir;
+
+	public PackInfo() {
+		downloading.put(logo, new AtomicReference<Boolean>(false));
+		downloading.put(background, new AtomicReference<Boolean>(false));
+		downloading.put(icon, new AtomicReference<Boolean>(false));
+	}
 
 	public abstract String getName();
 
@@ -202,74 +215,129 @@ public abstract class PackInfo extends RestObject {
 		return resourceDir;
 	}
 
-	public synchronized Image getLogo() {
-		if (logo == null) {
-			try {
-				logo = buildLogo();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return logo;
-	}
-
-	public synchronized Image getBackground() {
-		if (background == null) {
-			try {
-				background = buildBackground().getScaledInstance(880, 520, Image.SCALE_SMOOTH);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return background;
-	}
-
-	public synchronized Image getIcon() {
-		if (icon == null) {
-			try {
-				icon = buildIcon();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return icon;
-	}
-
-	private Image buildLogo() throws IOException {
-		return buildImage("logo.png", "/org/spoutcraft/launcher/resources/noLogo.png", getLogoURL(), getLogoMD5());
-	}
-	
-	private Image buildBackground() throws IOException {
-		return buildImage("background.jpg", "/org/spoutcraft/launcher/resources/background.jpg", getBackgroundURL(), getBackgroundMD5());
-	}
-
-	private Image buildIcon() throws IOException { 
-		return buildImage("icon.png", "/org/spoutcraft/launcher/resources/icon.png", getIconURL(), getIconMD5());
-	}
-
-	private Image buildImage(String name, String backup, String url, String md5) throws IOException {
-		BufferedImage image;
-		File assets = new File(Utils.getAssetsDirectory(), getName());
-		assets.mkdirs();
-		File temp = new File(assets, name);
-		if (url.isEmpty()) {
-			if (temp.exists()) {
-				image = ImageIO.read(temp);
-			} else {
-				image = ImageIO.read(ResourceUtils.getResourceAsStream(backup));
-			}
+	public synchronized BufferedImage getLogo() {
+		if (logo.get() != null) {
+			return logo.get();
 		} else {
-			if (temp.exists() && (md5.equals("") || MD5Utils.getMD5(temp).equalsIgnoreCase(md5))) {
-				image = ImageIO.read(temp);
-			} else {
-				if (temp.exists()) {
-					System.out.println("Pack: " + getName() + " Calculated MD5: " + MD5Utils.getMD5(temp) + " Required MD5: " + md5);
-				}
-				Download download = DownloadUtils.downloadFile(url, temp.getAbsolutePath());
-				image = ImageIO.read(download.getOutFile());
+			if (buildImage(logo, "logo.png", getLogoURL(), getLogoMD5())) {
+				return logo.get();
 			}
 		}
-		return image;
+
+		if (BACKUP_LOGO == null) {
+			BACKUP_LOGO = loadBackup("/org/spoutcraft/launcher/resources/noLogo.png");
+		}
+		return BACKUP_LOGO;
+	}
+
+	public synchronized BufferedImage getBackground() {
+		if (background.get() != null) {
+			return background.get();
+		} else {
+			if (buildImage(background, "background.jpg", getBackgroundURL(), getBackgroundMD5(), 880, 520)) {
+				Launcher.getFrame().getBackgroundImage().checkEnableTekkit(getName());
+				return background.get();
+			}
+		}
+
+		if (BACKUP_BACKGROUND == null) {
+			BACKUP_BACKGROUND = ImageUtils.scaleImage(loadBackup("/org/spoutcraft/launcher/resources/background.jpg"), 880, 520);
+		}
+		return BACKUP_BACKGROUND;
+	}
+
+	public synchronized BufferedImage getIcon() {
+		if (icon.get() != null) {
+			return icon.get();
+		} else {
+			if (buildImage(icon, "icon.png", getIconURL(), getIconMD5())) {
+				return icon.get();
+			}
+		}
+
+		if (BACKUP_ICON == null) {
+			BACKUP_ICON = loadBackup("/org/spoutcraft/launcher/resources/icon.png");
+		}
+		return BACKUP_ICON;
+	}
+
+	private BufferedImage loadBackup(String backup) {
+		try {
+			return ImageIO.read(ResourceUtils.getResourceAsStream(backup));
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	private boolean buildImage(AtomicReference<BufferedImage> image, String name, String url, String md5) {
+		return buildImage(image, name, url, md5, 0, 0);
+	}
+
+	private boolean buildImage(AtomicReference<BufferedImage> image, String name, String url, String md5, int width, int height) {
+		File assets = new File(Utils.getAssetsDirectory(), "packs");
+		File packs = new File(assets, getName());
+		packs.mkdirs();
+		File temp = new File(packs, name);
+
+		try {
+			if (temp.exists() && (url.isEmpty() || md5.equals("") || MD5Utils.getMD5(temp).equalsIgnoreCase(md5))) {
+				BufferedImage newImage;
+				if (width > 0 && height > 0) {
+					newImage = ImageUtils.scaleImage(ImageIO.read(temp), width, height);
+				} else {
+					newImage = ImageIO.read(temp);
+				}
+				image.set(newImage);
+				return true; // We have successfully loaded the one from the file, with the correct md5
+			}
+		} catch (IIOException e) {
+			Launcher.getLogger().log(Level.INFO, "Failed to load image " + temp.getAbsolutePath() + " from file, attempting download");
+		} catch (IOException e) {
+			e.printStackTrace(); // Failed to load image from file for some reason, continue on and debug the stack trace
+		}
+
+		downloadImage(image, url, temp, width, height, md5);
+		return false;
+	}
+
+	private void downloadImage(final AtomicReference<BufferedImage> image, final String url, final File temp, final int width, final int height, final String md5) {
+		if (url.isEmpty() || downloading.get(image).get()) {
+			return;
+		}
+
+		downloading.get(image).set(true);
+		final String name = getName();
+		Thread thread = new Thread(name + " Image Download Worker") {
+			@Override
+			public void run() {
+				try {
+					if (temp.exists()) {
+						System.out.println("Pack: " + getName() + " Calculated MD5: " + MD5Utils.getMD5(temp) + " Required MD5: " + md5);
+					}
+					Download download = DownloadUtils.downloadFile(url, temp.getAbsolutePath());
+					BufferedImage newImage;
+					boolean force = false;
+					if (width > 0 && height > 0) {
+						newImage = ImageUtils.scaleImage(ImageIO.read(download.getOutFile()), width, height);
+						if (Launcher.getFrame().getSelector().getSelectedPack().getName().equals(name)) {
+							force = true; // Force background fade in if the pack is selected and this is a background 
+							// (It is a background because width/height are being set. Bad I know.)
+						}
+					} else {
+						newImage = ImageIO.read(download.getOutFile());
+					}
+					image.set(newImage);
+					Launcher.getFrame().getBackgroundImage().checkEnableTekkit(name);
+					Launcher.getFrame().getSelector().redraw(force);
+					downloading.get(image).set(false);
+				} catch (IOException e) {
+					System.out.println("Failed to download and load image from: " + url);
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
 	}
 
 	@Override

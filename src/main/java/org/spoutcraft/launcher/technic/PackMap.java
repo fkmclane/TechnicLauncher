@@ -31,7 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.spoutcraft.launcher.Settings;
+import org.spoutcraft.launcher.api.Launcher;
 import org.spoutcraft.launcher.technic.rest.RestAPI;
+import org.spoutcraft.launcher.technic.skin.ModpackSelector;
 
 public class PackMap extends HashMap<String, PackInfo> {
 	private static final long serialVersionUID = 1L;
@@ -154,7 +156,13 @@ public class PackMap extends HashMap<String, PackInfo> {
 	}
 
 	public void initPacks() {
-		loadDefaults();
+		String lastPack = Settings.getLastModpack();
+		
+		if (!Settings.getInstalledPacks().contains(lastPack)) {
+			lastPack = ModpackSelector.DEFAULT_PACK;
+		}
+
+		loadDefaults(lastPack);
 
 		for (String pack : Settings.getInstalledPacks()) {
 			// Skip non custom packs
@@ -162,13 +170,16 @@ public class PackMap extends HashMap<String, PackInfo> {
 				continue;
 			}
 			loadPack(pack);
+			if (pack.equals(lastPack)) {
+				select(pack);
+			}
 		}
 
 		// Add in the add pack button
 		put("addpack", new AddPack());
 	}
 
-	private void loadDefaults() {
+	private void loadDefaults(final String lastPack) {
 		for (String pack : Settings.getInstalledPacks()) {
 			// Skip custom packs
 			if (Settings.isPackCustom(pack)) {
@@ -187,7 +198,11 @@ public class PackMap extends HashMap<String, PackInfo> {
 					add(pack);
 					reorder(index, pack.getName());
 					index++;
+					if (pack.getName().equals(lastPack)) {
+						select(pack.getName());
+					}
 				}
+				Launcher.getFrame().getSelector().redraw(false);
 			}
 		};
 		thread.start();

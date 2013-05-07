@@ -33,7 +33,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FocusTraversalPolicy;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -73,7 +72,6 @@ import org.spoutcraft.launcher.skin.components.LoginFrame;
 import org.spoutcraft.launcher.skin.components.NewsComponent;
 import org.spoutcraft.launcher.technic.AddPack;
 import org.spoutcraft.launcher.technic.PackInfo;
-import org.spoutcraft.launcher.technic.RestInfo;
 import org.spoutcraft.launcher.technic.skin.ImageButton;
 import org.spoutcraft.launcher.technic.skin.LauncherOptions;
 import org.spoutcraft.launcher.technic.skin.ModpackOptions;
@@ -177,8 +175,9 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 
 		// Technic logo
 		JLabel logo = new JLabel();
-		logo.setBounds(602, 5, 270, 70);
-		setIcon(logo, "header.png", logo.getWidth(), logo.getHeight());
+		ImageIcon logoIcon = new ImageIcon(ImageUtils.scaleWithAspectWidth(getImage("header.png"), 275));
+		logo.setIcon(logoIcon);
+		logo.setBounds(600, 6, logoIcon.getIconWidth(), logoIcon.getIconHeight());
 
 		// Pack Selector Background
 		JLabel selectorBackground = new JLabel();
@@ -257,8 +256,8 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 		options.addKeyListener(this);
 
 		// Pack Options Button
-		packOptionsBtn = new ImageButton(getIcon("packOptions.png", 20, 21), getIcon("packOptionsInverted.png", 20, 21));
-		packOptionsBtn.setBounds(25, FRAME_HEIGHT / 2 + 56, 20, 21);
+		packOptionsBtn = new ImageButton(getIcon("packOptions.png", 20, 20), getIcon("packOptionsInverted.png", 20, 20));
+		packOptionsBtn.setBounds(25, FRAME_HEIGHT / 2 + 56, 20, 20);
 		packOptionsBtn.setActionCommand(PACK_OPTIONS_ACTION);
 		packOptionsBtn.addActionListener(this);
 
@@ -268,8 +267,8 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 		platform.setBounds(50, FRAME_HEIGHT / 2 + 56, 20, 20);
 
 		// Pack Remove Button
-		packRemoveBtn = new ImageButton(getIcon("packDelete.png", 20, 21), getIcon("packDeleteInverted.png", 20, 21));
-		packRemoveBtn.setBounds(185, FRAME_HEIGHT / 2 + 56, 20, 21);
+		packRemoveBtn = new ImageButton(getIcon("packDelete.png", 20, 20), getIcon("packDeleteInverted.png", 20, 20));
+		packRemoveBtn.setBounds(185, FRAME_HEIGHT / 2 + 56, 20, 20);
 		packRemoveBtn.setActionCommand(PACK_REMOVE_ACTION);
 		packRemoveBtn.addActionListener(this);
 
@@ -329,10 +328,16 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 			String accountName = savedUsers.get(i);
 			String userName = this.getUsername(accountName);
 
-			ImageIcon image = getIcon("face.png");
-			File face = new File(Utils.getAssetsDirectory(), userName + ".png");
+			BufferedImage image = getImage("face.png", 45, 45);
+			File assets = new File(Utils.getAssetsDirectory(), "avatars");
+			File face = new File(assets, userName + ".png");
 			if (face.exists()) {
-				image = new ImageIcon(face.getAbsolutePath());
+				try {
+					image = ImageIO.read(face);
+					System.out.println("Loaded face");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 			
 			DynamicButton userButton = new DynamicButton(this, image, 1, accountName, userName);
@@ -410,6 +415,24 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 		return new ImageIcon(Launcher.class.getResource("/org/spoutcraft/launcher/resources/" + iconName));
 	}
 
+	public static BufferedImage getImage(String imageName) {
+		try {
+			return ImageIO.read(ResourceUtils.getResourceAsStream("/org/spoutcraft/launcher/resources/" + imageName));
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public static BufferedImage getImage(String imageName, int w, int h) {
+		try {
+			return ImageUtils.scaleImage(ImageIO.read(ResourceUtils.getResourceAsStream("/org/spoutcraft/launcher/resources/" + imageName)), w, h);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public static ImageIcon getIcon(String iconName, int w, int h) {
 		try {
 			return new ImageIcon(ImageUtils.scaleImage(ImageIO.read(ResourceUtils.getResourceAsStream("/org/spoutcraft/launcher/resources/" + iconName)), w, h));
@@ -438,13 +461,15 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 		for (String user : userButtons.keySet()) {
 			BufferedImage image = getUserImage(user);
 			if (image != null) {
-				userButtons.get(user).updateIcon(new ImageIcon(image));
+				userButtons.get(user).updateIcon(image);
 			}
 		}
 	}
 
 	private BufferedImage getUserImage(String user) {
-		File file = new File(Utils.getAssetsDirectory(), user + ".png");
+		File assets = new File(Utils.getAssetsDirectory(), "avatars");
+		assets.mkdirs();
+		File file = new File(assets, user + ".png");
 		try {
 			Download download = DownloadUtils.downloadFile("http://skins.technicpack.net/helm/" + user + "/100", file.getAbsolutePath());
 			if (download.getResult().equals(Result.SUCCESS)) {
@@ -608,16 +633,6 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 		packOptionsBtn.setEnabled(unlock);
 	}
 
-	public Image newBackgroundImage(RestInfo modpack) {
-		try {
-			Image image = modpack.getBackground().getScaledInstance(FRAME_WIDTH, FRAME_HEIGHT, Image.SCALE_SMOOTH);
-			return image;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 	// Emulates tab focus policy of name -> pass -> remember -> login
 	private class LoginFocusTraversalPolicy extends FocusTraversalPolicy{
 		@Override
@@ -678,10 +693,6 @@ public class MetroLoginFrame extends LoginFrame implements ActionListener, KeyLi
 			} else if (e.getComponent() == remember) {
 				remember.setSelected(!remember.isSelected());
 			}
-		} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-			action(PACK_LEFT_ACTION, null);
-		} else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-			action(PACK_RIGHT_ACTION, null);
 		}
 	}
 
