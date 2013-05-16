@@ -82,6 +82,9 @@ public class LoginWorker extends SwingWorker<Object, Object> {
 
 	@Override
 	protected Object doInBackground() throws Exception {
+		if(Utils.isEmpty(authServer))
+			authServer = "login.minecraft.net";
+
 		loginFrame.getProgressBar().setVisible(true);
 		loginFrame.getProgressBar().setString("Connecting to " + authServer + "...");
 		try {

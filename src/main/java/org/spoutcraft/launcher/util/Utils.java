@@ -287,8 +287,6 @@ public class Utils {
 
 	public static String[] doLogin(String user, String pass, String authServer, JProgressBar progress) throws BadLoginException, MCNetworkException, OutdatedMCLauncherException, UnsupportedEncodingException, MinecraftUserNotPremiumException, PermissionDeniedException {
 		String parameters = "user=" + URLEncoder.encode(user, "UTF-8") + "&password=" + URLEncoder.encode(pass, "UTF-8") + "&version=" + 13;
-		if(isEmpty(authServer))
-			authServer = "login.minecraft.net";
 		String result = executePost("http://" + authServer + "/", parameters, progress);
 		if (result == null) {
 			throw new MCNetworkException();
