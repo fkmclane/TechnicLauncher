@@ -59,35 +59,11 @@ public class Settings {
 	}
 
 	public static synchronized int getLauncherBuild() {
-		return yaml.getInt("launcher.launcher.buildNumber", -1);
+		return yaml.getInt("launcher.buildNumber", -1);
 	}
 
 	public static synchronized void setLauncherBuild(int build) {
-		yaml.setProperty("launcher.launcher.buildNumber", build);
-	}
-
-	public static synchronized Channel getLauncherChannel() {
-		return Channel.getType(yaml.getInt("launcher.launcher.type", 0));
-	}
-
-	public static synchronized void setLauncherChannel(Channel build) {
-		yaml.setProperty("launcher.launcher.type", build.type());
-	}
-
-	public static synchronized Channel getSpoutcraftChannel() {
-		return Channel.getType(yaml.getInt("launcher.client.type", 0));
-	}
-
-	public static synchronized void setSpoutcraftChannel(Channel build) {
-		yaml.setProperty("launcher.client.type", build.type());
-	}
-
-	public static synchronized String getSpoutcraftSelectedBuild() {
-		return yaml.getString("launcher.client.buildNumber", "-1");
-	}
-
-	public static synchronized void setSpoutcraftSelectedBuild(String build) {
-		yaml.setProperty("launcher.client.buildNumber", build);
+		yaml.setProperty("launcher.buildNumber", build);
 	}
 
 	public static synchronized int getMemory() {
@@ -172,14 +148,6 @@ public class Settings {
 
 	public static synchronized void setWindowModeId(int id) {
 		yaml.setProperty("launcher.windowmode", id);
-	}
-
-	public static synchronized String getMinecraftVersion() {
-		return yaml.getString("launcher.mc", DEFAULT_MINECRAFT_VERSION);
-	}
-
-	public static synchronized void setMinecraftVersion(String version) {
-		yaml.setProperty("launcher.mc", version);
 	}
 
 	public static synchronized String getDirectJoin() {
