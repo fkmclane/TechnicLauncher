@@ -24,58 +24,42 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
+package tk.fkmclane.mineproxy;
 
-package mineshafter.util;
-
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
-public class Streams {
-	public static int pipeStreams(InputStream in, OutputStream out) throws IOException {
-		byte[] b = new byte[8192];
-		int read;
-		int total = 0;
+public class Pipe extends Thread {
+	BufferedReader in;
+	BufferedWriter out;
 
-		while(true) {
-			try {
-				read = in.read(b);
-				if(read == -1) {
-					break;
-				}
-			}
-			catch(IOException e) {
-				break;
-			}
-			out.write(b, 0, read);
-			total += read;
-		}
-		out.flush();
-		return total;
+	public Pipe(BufferedReader in, BufferedWriter out) {
+		this.in = in;
+		this.out = out;
+		start();
 	}
 
-	public static void pipeStreamsActive(final InputStream in, final OutputStream out) {
-		Thread thread = new Thread("Active Pipe Thread") {
-
-			@Override
-			public void run() {
-				byte[] b = new byte[8192];
-				int count;
-				while(true) {
-					try {
-						count = in.read(b);
-						if(count == -1)
-							return;
-
-						out.write(b, 0, count);
-						out.flush();
-					}
-					catch(IOException e) {
-						return;
-					}
-				}
+	public void run() {
+		try {
+			char[] buffer = new char[4096];
+			int count;
+			while((count = in.read(buffer)) != -1) {
+				out.write(buffer, 0, count);
+				out.flush();
 			}
-		};
-		thread.start();
+		}
+		catch(IOException e) {
+			//Most likely a socket close
+		}
+		finally {
+			try {
+				in.close();
+				out.close();
+			}
+			catch(IOException e) {
+				//Ignore
+			}
+		}
 	}
 }

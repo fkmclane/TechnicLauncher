@@ -69,7 +69,7 @@ import org.spoutcraft.launcher.exceptions.OutdatedMCLauncherException;
 import org.spoutcraft.launcher.exceptions.PermissionDeniedException;
 import org.spoutcraft.launcher.skin.SplashScreen;
 
-import mineshafter.proxy.MineProxy;
+import tk.fkmclane.mineproxy.MineProxy;
 
 public class Utils {
 	private static File workDir = null;
@@ -395,9 +395,5 @@ public class Utils {
 
 		MineProxy proxy = new MineProxy(authServer);
 		proxy.start();
-
-		System.setProperty("http.proxyHost", "127.0.0.1");
-		System.setProperty("http.proxyPort", Integer.toString(proxy.getPort()));
-		System.setProperty("java.net.preferIPv4Stack", "true");
 	}
 }

@@ -187,8 +187,10 @@ public class LauncherOptions extends JDialog implements ActionListener, MouseLis
 		authLabel.setForeground(Color.WHITE);
 		authLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-		auth = new LiteTextBox(this, Settings.getAuthServer());
+		auth = new LiteTextBox(this, "");
 		auth.setBounds(authLabel.getX() + authLabel.getWidth() + 10, authLabel.getY(), 100, 20);
+		auth.setFont(minecraft.deriveFont(10F));
+		auth.setText(Settings.getAuthServer());
 
 		permgen = new JCheckBox("Increase PermGen Size");
 		permgen.setFont(minecraft);
