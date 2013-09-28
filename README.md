@@ -1,7 +1,7 @@
 Technic Launcher
 ===================
 
-This is a modified version of the Technic Launcher that allows authenticating to a generic authentication server and to proxy Minecraft to use that authentication server.  Credit goes to MineshafterSquared for MineProxy and to Technic and Spout for their launcher.
+This is a modified version of the Technic Launcher designed to authenticate to and proxy Minecraft to an MCAuth authentication server.
 
 ## What is The Technic Launcher?
 The Technic Launcher is a modified version of the Spoutcraft Launcher, which has been modified for the distribution of Technic mod packs.  It features automated minecraft.jar version patching, automated updates, and more!  
